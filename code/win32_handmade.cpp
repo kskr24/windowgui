@@ -24,6 +24,37 @@ global_variable BITMAPINFO BitMapInfo;
 global_variable void      *BitMapMemory;
 global_variable int        BitMapHeight;
 global_variable int        BitMapWidth;
+global_variable int        BytesPerPixel = 4;
+
+internal void RenderWeirdGradient(int XOffset, int YOffset) {
+  int    Width  = BitMapWidth;
+  int    Height = BitMapHeight;
+  uint8 *Row    = (UINT8 *)BitMapMemory;
+  int    Pitch  = Width * BytesPerPixel;
+
+  for (int Y = 0; Y < BitMapHeight; ++Y) {
+    uint8 *Pixel = (uint8 *)Row;
+    for (int X = 0; X < BitMapWidth; ++X) {
+      /*
+      Pixel in memory  RR  GG  BB  xx
+      LITTLE ENDIAN Architecture
+      OxxxBBGGRR
+      */
+      *Pixel = (uint8)(X + XOffset);
+      ++Pixel;
+
+      *Pixel = (uint8)(Y + YOffset);
+      ++Pixel;
+
+      *Pixel = 0;
+      ++Pixel;
+
+      *Pixel = 0;
+      ++Pixel;
+    }
+    Row += Pitch;
+  }
+}
 
 internal void Win32ResizeDIBSection(int Width, int Height) {
   // TODO(kskr) Memory Management
@@ -47,32 +78,7 @@ internal void Win32ResizeDIBSection(int Width, int Height) {
   int BitMapMemorySize = (BitMapWidth * BitMapHeight * BytesPerPixel);
 
   BitMapMemory = VirtualAlloc(0, BitMapMemorySize, MEM_COMMIT, PAGE_READWRITE);
-
-  uint8 *Row   = (UINT8 *)BitMapMemory;
-  int    Pitch = Width * BytesPerPixel;
-
-  for (int Y = 0; Y < BitMapHeight; ++Y) {
-    uint8 *Pixel = (uint8 *)Row;
-    for (int X = 0; X < BitMapWidth; ++X) {
-      /*
-      Pixel in memory  RR  GG  BB  xx
-      LITTLE ENDIAN Architecture
-      OxxxBBGGRR
-      */
-      *Pixel = (uint8)X;
-      ++Pixel;
-
-      *Pixel = (uint8)Y;
-      ++Pixel;
-
-      *Pixel = 0;
-      ++Pixel;
-
-      *Pixel = 0;
-      ++Pixel;
-    }
-    Row += Pitch;
-  }
+  RenderWeirdGradient(0, 0);
 }
 
 internal void Win32UpdateWindow(HDC   DeviceContext,
@@ -134,6 +140,7 @@ LRESULT CALLBACK Win32MainWindowCallback(HWND   Window,
       OutputDebugStringA("WM_ACTIVATEAPP\n");
     } break;
     case WM_PAINT: {
+      OutputDebugStringA("WM_PAINT\n");
       PAINTSTRUCT Paint;
       HDC         DeviceContext = BeginPaint(Window, &Paint);
       int         X             = Paint.rcPaint.left;
@@ -181,19 +188,18 @@ int CALLBACK WinMain(HINSTANCE Instance,
     if (WindowHandle) {
       Running = true;
       while (Running) {
-        MSG  Message;
-        BOOL MessageResult = GetMessage(&Message, 0, 0, 0);
-        if (MessageResult > 0) {
+        MSG Message;
+        while (PeekMessage(&Message, 0, 0, 0, PM_REMOVE)) {
+          if (Message.message == WM_QUIT) {
+            Running = false;
+          }
           TranslateMessage(&Message);
           DispatchMessage(&Message);
-        } else {
-          break;
         }
       }
     } else {
       // TODO(kskr) :
     }
-
   } else {
     // TODO(kskr): Logging
   }
