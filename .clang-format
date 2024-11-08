@@ -1,0 +1,29 @@
+---
+Language:        Cpp
+BasedOnStyle:  Google
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
+ForEachMacros:   [ foreach, Q_FOREACH, BOOST_FOREACH, FOREACH_POP ]
+IncludeCategories:   
+  - Regex:           '^[<"].*_using.hpp[">]$' # These need to be at the end    
+    Priority:        110  
+  - Regex:           '^[<"](rf|controller|db|devutil|lib|model|src|support|test|view)/' # In this project    
+    Priority:        10  
+  - Regex:           '^[<"](boost|gflags|glog|gtest)/' # Third party libraries    
+    Priority:        30  
+  - Regex:           '^[<"](wms_startup|sculptor).hpp[">]$' # Other projects    
+    Priority:        20  
+  - Regex:           '^[<"](otl_manager|dc|picky|pim|pkfd|sculptor)/' # Other projects    
+    Priority:        20  
+  - Regex:           '^[<"][^./]*[">]$' # C++ includes (no path separators or extensions)    
+    Priority:        50  
+  - Regex:           '^<' # This should only catch C includes    
+    Priority:        40  
+  - Regex:           '.*'    
+    Priority:        100
+IncludeIsMainRegex: '([-_]test)?$'
+Standard:        Cpp11
+... 
